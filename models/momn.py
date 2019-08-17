@@ -178,7 +178,7 @@ class Model(nn.Module):
         ''' fc '''
         logit = self.fc_cls(feat)
 
-        return logit,(A,s_att)
+        return logit,(A,s_att,feat)
 		
 class LOSS(nn.Module):
     def __init__(self, args=None):
