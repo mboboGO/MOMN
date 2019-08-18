@@ -3,9 +3,9 @@ import math
 import torch
 import torch.nn.functional as F
 from torchvision import models
-import resnet
+import resnet_
 
-__all__ = ['momn']
+__all__ = ['momn1']
 	
 class Model(nn.Module):
     def __init__(self, pretrained=True, args=None):
@@ -13,7 +13,7 @@ class Model(nn.Module):
         self.inplanes = 64
         self.num_classes = args.num_cls
         is_fix = args.is_fix
-        self.backbone_arch = args.backbone
+        self.arch = args.backbone
 		
         ''' params '''
         self.iterN = args.iterN
@@ -25,23 +25,25 @@ class Model(nn.Module):
         self.aux_var = args.aux_var
 	
         ''' Backbone Net'''
-        if self.backbone_arch in dir(models):
-            self.model = getattr(models, self.backbone_arch)(pretrained=False)
+        if self.arch in ['resnet50','resnet101']:
+            self.backbone = getattr(resnet_, self.arch)(pretrained=False)
+        elif self.arch in dir(models):
+            self.backbone = getattr(models, self.arch)(pretrained=False)
         else:
-            self.model = pretrainedmodels.__dict__[self.backbone_arch](num_classes=1000,pretrained=False)
+            self.backbone = pretrainedmodels.__dict__[self.arch](num_classes=1000,pretrained=False)
             
         if pretrained:
-            if self.backbone_arch=='resnet50':
-                model_dict = self.model.state_dict()
-                self.model.load_state_dict(torch.load('./resnet50-19c8e357.pth'))
-            elif self.backbone_arch=='resnet101':
-                model_dict = self.model.state_dict()
-                self.model.load_state_dict(torch.load('./resnet101-5d3b4d8f.pth'))
+            if self.arch=='resnet50':
+                model_dict = self.backbone.state_dict()
+                self.backbone.load_state_dict(torch.load('./resnet50-19c8e357.pth'))
+            elif self.arch=='resnet101':
+                model_dict = self.backbone.state_dict()
+                self.backbone.load_state_dict(torch.load('./resnet101-5d3b4d8f.pth'))
 
-        if self.backbone_arch in ['resnet50','se_resnet50','resnet101']:
-            self.model = nn.Sequential(*list(self.model.children())[:-2])
-        elif self.backbone_arch in ['senet154']:
-            self.model = nn.Sequential(*list(self.model.children())[:-3])
+        if self.arch in ['resnet50','se_resnet50','resnet101']:
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
+        elif self.arch in ['senet154']:
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-3])
             
         if(is_fix):
             for p in self.parameters():
@@ -60,7 +62,7 @@ class Model(nn.Module):
 		
         ''' params ini '''
         for name, m in self.named_modules():
-            if 'model' not in name:
+            if 'backbone' not in name:
                 if isinstance(m, nn.Conv2d):
                     nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
                 elif isinstance(m, nn.BatchNorm2d):
@@ -69,7 +71,7 @@ class Model(nn.Module):
 
     def att_module(self, ic):
         model = nn.Sequential(
-            nn.AvgPool2d(14),
+            nn.AvgPool2d(28),
             nn.Conv2d(ic,int(ic/16), kernel_size=1, stride=1, bias=False),
             nn.Conv2d(int(ic/16),ic, kernel_size=1, stride=1, bias=False),
             nn.Sigmoid(),
@@ -147,7 +149,7 @@ class Model(nn.Module):
 	
     def forward(self,x):
         ''' backbone '''
-        x = self.model(x)
+        x = self.backbone(x)
         last_conv = x
 		
         # projection
@@ -164,7 +166,7 @@ class Model(nn.Module):
         x = pro.view(pro.size(0),pro.size(1), -1)
         x = x - torch.mean(x,dim=2,keepdim=True)
 		
-        # ilrmsn
+        # momn
         A = 1./x.size(2)*x.bmm(x.transpose(1,2))
         lrmsr = self.momn(A,s_att,self.iterN,
                             self.beta1,self.beta2,
@@ -174,9 +176,9 @@ class Model(nn.Module):
         feat = x.view(x.size(0), -1)
 		
         ''' fc '''
-        cls = self.fc_cls(feat)
+        logit = self.fc_cls(feat)
 
-        return cls,(A,s_att)
+        return logit,(A,s_att,feat)
 		
 class LOSS(nn.Module):
     def __init__(self, args=None):
@@ -201,7 +203,7 @@ class LOSS(nn.Module):
 		
         return total_loss, cls_loss, aux_loss
 		
-def momn(pretrained=False, args=None):
+def momn1(pretrained=False, args=None):
     """Constructs a ResNet-101 model.
 
     Args:

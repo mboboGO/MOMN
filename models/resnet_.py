@@ -97,7 +97,7 @@ class Bottleneck(nn.Module):
 
 class ResNet(nn.Module):
 
-    def __init__(self, block, layers, num_classes=1000, is_fix=False):
+    def __init__(self, block, layers, num_classes=1000):
         self.inplanes = 64
         super(ResNet, self).__init__()
 
@@ -111,10 +111,6 @@ class ResNet(nn.Module):
         self.layer2 = self._make_layer(block, 128, layers[1], stride=2)
         self.layer3 = self._make_layer(block, 256, layers[2], stride=2)
         self.layer4 = self._make_layer(block, 512, layers[3], stride=1)
-
-        if(is_fix):
-            for p in self.parameters():
-                p.requires_grad=False
 
         ''' new net '''
         self.avgpool = nn.AdaptiveAvgPool2d((1, 1))
@@ -161,21 +157,6 @@ class ResNet(nn.Module):
        
         return logit
 
-class LRCP_LOSS(nn.Module):
-    def __init__(self, params=None):
-        super(LRCP_LOSS, self).__init__()
-        self.cls_loss = nn.CrossEntropyLoss()
-
-    def forward(self, data, label):
-        cls = data[0]
-
-        # cls loss
-        cls_loss = self.cls_loss(cls,label)
-
-        total_loss = cls_loss #+ lr_loss + sr_loss
-
-        return total_loss, cls_loss#, lr_loss,sr_loss
-
 def resnet18(pretrained=False, **kwargs):
     """Constructs a ResNet-18 model.
 
@@ -212,22 +193,16 @@ def resnet50(pretrained=False, **kwargs):
     return model
 
 
-def resnet101(pretrained=False, params=None):
+def resnet101(pretrained=False, **kwargs):
     """Constructs a ResNet-101 model.
 
     Args:
         pretrained (bool): If True, returns a model pre-trained on ImageNet
     """
-    model = ResNet(Bottleneck, [3, 4, 23, 3], num_classes=params['num_classes'],is_fix=params['is_fix'])
-    loss_model = LRCP_LOSS(params)
+    model = ResNet(Bottleneck, [3, 4, 23, 3], **kwargs)
     if pretrained:
-        model_dict = model.state_dict()
-        #pretrained_dict = model_zoo.load_url(model_urls['resnet101'])
-        pretrained_dict = torch.load('./checkpoints/resnet101-5d3b4d8f.pth')
-        pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
-        model_dict.update(pretrained_dict)
-        model.load_state_dict(model_dict)
-    return model,loss_model
+        model.load_state_dict(model_zoo.load_url(model_urls['resnet101']))
+    return model
 
 
 def resnet152(pretrained=False, **kwargs):

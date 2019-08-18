@@ -84,7 +84,7 @@ class Model(nn.Module):
         x = x.view(x.size(0), -1)
         # norm
         x = torch.sign(x)*torch.sqrt(torch.abs(x))
-        x = F.normalize(x)
+        x = F.normalize(x,dim=1)
         
         ''' classifier '''
         logit = self.classifier(x)

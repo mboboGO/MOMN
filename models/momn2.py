@@ -3,9 +3,8 @@ import math
 import torch
 import torch.nn.functional as F
 from torchvision import models
-import resnet
 
-__all__ = ['momn']
+__all__ = ['momn2']
 	
 class Model(nn.Module):
     def __init__(self, pretrained=True, args=None):
@@ -25,9 +24,7 @@ class Model(nn.Module):
         self.aux_var = args.aux_var
 	
         ''' Backbone Net'''
-        if self.arch in ['resnet50','resnet101']:
-            self.backbone = getattr(resnet, self.arch)(pretrained=False)
-        elif self.arch in dir(models):
+        if self.arch in dir(models):
             self.backbone = getattr(models, self.arch)(pretrained=False)
         else:
             self.backbone = pretrainedmodels.__dict__[self.arch](num_classes=1000,pretrained=False)
@@ -203,7 +200,7 @@ class LOSS(nn.Module):
 		
         return total_loss, cls_loss, aux_loss
 		
-def momn(pretrained=False, args=None):
+def momn2(pretrained=False, args=None):
     """Constructs a ResNet-101 model.
 
     Args:
