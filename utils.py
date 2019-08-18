@@ -53,7 +53,7 @@ def accuracy(output, target, topk=(1,)):
         
 def preprocess_strategy(dataset):
     evaluate_transforms = None
-    if dataset in ['cub','car','air']:
+    if dataset in ['cub','car','air','dog']:
         train_transforms = transforms.Compose([
             transforms.RandomResizedCrop(448),
             transforms.RandomHorizontalFlip(),

@@ -137,6 +137,11 @@ def main():
         traindir = os.path.join(img_root,'../train.list')
         valdir = os.path.join(img_root,'../test.list')
         args.num_cls = 100
+    elif args.data == 'dog':
+        img_root = '/userhome/raw_data/dogs-120/Images'
+        traindir = os.path.join(img_root,'../train.list')
+        valdir = os.path.join(img_root,'../test.list')
+        args.num_cls = 100
     
 
     train_transforms, val_transforms = preprocess_strategy(args.data)
