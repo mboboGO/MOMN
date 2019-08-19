@@ -72,7 +72,11 @@ parser.add_argument('--is_fix', dest='is_fix', action='store_true',
 parser.add_argument('--opt', default='sgd', type=str,
                     help='optimizer type')
                     
-                    
+''' data proc '''
+parser.add_argument('--resize_size', default=480, type=int, help='resize size')
+parser.add_argument('--crop_size', default=448, type=int, help='crop size')
+parser.add_argument('--rotate', default=0, type=int, help='is rotate')
+
 ''' momn '''
 parser.add_argument('--iterN', default=5, type=int,metavar='W', help='iterN')
 parser.add_argument('--beta1', default=0.5, type=float,metavar='W', help='beta1')
@@ -141,10 +145,10 @@ def main():
         img_root = '/userhome/raw_data/dogs-120/Images'
         traindir = os.path.join(img_root,'../train.list')
         valdir = os.path.join(img_root,'../test.list')
-        args.num_cls = 100
+        args.num_cls = 120
     
 
-    train_transforms, val_transforms = preprocess_strategy(args.data)
+    train_transforms, val_transforms = preprocess_strategy(args)
 
     train_dataset = datasets.ImageFolder(img_root,traindir,train_transforms)
     val_dataset = datasets.ImageFolder(img_root,valdir, val_transforms)

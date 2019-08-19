@@ -51,18 +51,33 @@ def accuracy(output, target, topk=(1,)):
             res.append(correct_k.mul_(100.0 / batch_size))
         return res
         
-def preprocess_strategy(dataset):
+def preprocess_strategy(args):
     evaluate_transforms = None
-    if dataset in ['cub','car','air','dog']:
+    if args.data in ['cub','car','air','dog']:
         train_transforms = transforms.Compose([
-            transforms.RandomResizedCrop(448),
+            transforms.RandomResizedCrop(args.crop_size),
             transforms.RandomHorizontalFlip(),
             transforms.ToTensor(),
             normalize,
         ])  
         val_transforms = transforms.Compose([
-            transforms.Resize(480),
-            transforms.CenterCrop(448),
+            transforms.Resize(args.resize_size),
+            transforms.CenterCrop(args.crop_size),
+            transforms.ToTensor(),
+            normalize,
+        ]) 
+    if args.rotate:
+        train_transforms = transforms.Compose([
+            transforms.Resize((args.resize_size, args.resize_size)),
+            transforms.RandomRotation(degrees=15),
+            transforms.RandomCrop((args.crop_size,args.crop_size)),
+            transforms.RandomHorizontalFlip(),
+            transforms.ToTensor(),
+            normalize,
+        ])  
+        val_transforms = transforms.Compose([
+            transforms.Resize(args.resize_size),
+            transforms.CenterCrop(args.crop_size),
             transforms.ToTensor(),
             normalize,
         ]) 

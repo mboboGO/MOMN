@@ -29,19 +29,6 @@ class Model(nn.Module):
         else:
             self.backbone = pretrainedmodels.__dict__[self.arch](num_classes=1000,pretrained=False)
             
-        if pretrained:
-            if self.arch=='resnet50':
-                model_dict = self.backbone.state_dict()
-                self.backbone.load_state_dict(torch.load('./resnet50-19c8e357.pth'))
-            elif self.arch=='resnet101':
-                model_dict = self.backbone.state_dict()
-                self.backbone.load_state_dict(torch.load('./resnet101-5d3b4d8f.pth'))
-
-        if self.arch in ['resnet50','se_resnet50','resnet101']:
-            self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
-        elif self.arch in ['senet154']:
-            self.backbone = nn.Sequential(*list(self.backbone.children())[:-3])
-            
         if(is_fix):
             for p in self.parameters():
                 p.requires_grad=False
@@ -58,17 +45,29 @@ class Model(nn.Module):
         self.fc_cls = nn.Linear(int(256*(256+1)/2), self.num_classes)
 		
         ''' params ini '''
-        for name, m in self.named_modules():
-            if 'backbone' not in name:
-                if isinstance(m, nn.Conv2d):
-                    nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
-                elif isinstance(m, nn.BatchNorm2d):
-                    nn.init.constant_(m.weight, 1)
-                    nn.init.constant_(m.bias, 0)
+        for m in self.modules():
+            if isinstance(m, nn.Conv2d):
+                nn.init.kaiming_normal_(m.weight, mode='fan_out', nonlinearity='relu')
+            elif isinstance(m, nn.BatchNorm2d):
+                nn.init.constant_(m.weight, 1)
+                nn.init.constant_(m.bias, 0)
+                
+        if pretrained:
+            if self.arch=='resnet50':
+                model_dict = self.backbone.state_dict()
+                self.backbone.load_state_dict(torch.load('./resnet50-19c8e357.pth'))
+            elif self.arch=='resnet101':
+                model_dict = self.backbone.state_dict()
+                self.backbone.load_state_dict(torch.load('./resnet101-5d3b4d8f.pth'))
+
+        if self.arch in ['resnet50','se_resnet50','resnet101']:
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
+        elif self.arch in ['senet154']:
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-3])
 
     def att_module(self, ic):
         model = nn.Sequential(
-            nn.AvgPool2d(28),
+            nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(ic,int(ic/16), kernel_size=1, stride=1, bias=False),
             nn.Conv2d(int(ic/16),ic, kernel_size=1, stride=1, bias=False),
             nn.Sigmoid(),

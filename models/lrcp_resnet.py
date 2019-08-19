@@ -130,7 +130,7 @@ class LRCP(nn.Module):
         self.att_net = self.att_module(256)
 		
         ''' classifier'''
-        self.fc_cls = nn.Linear(int(256*(256+1)/2), 200)
+        self.fc_cls = nn.Linear(int(256*(256+1)/2), args.num_cls)
 		
         ''' params ini '''
         for m in self.modules():
@@ -142,7 +142,7 @@ class LRCP(nn.Module):
 
     def att_module(self, ic):
         model = nn.Sequential(
-            nn.AvgPool2d(28),
+            nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(ic,int(ic/16), kernel_size=1, stride=1, bias=False),
             nn.Conv2d(int(ic/16),ic, kernel_size=1, stride=1, bias=False),
             nn.Sigmoid(),
@@ -273,7 +273,7 @@ class LRCP(nn.Module):
         ''' fc '''
         cls = self.fc_cls(feat)
 
-        return cls,[A,s_att]
+        return cls,[A,s_att,feat]
 		
 class LRCP_LOSS(nn.Module):
     def __init__(self, args=None):
