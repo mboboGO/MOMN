@@ -1,7 +1,4 @@
 cub
 car
 air
-dog
-resnet101-5d3b4d8f.pth
-resnet50-19c8e357.pth
-eval.py
+pretrained

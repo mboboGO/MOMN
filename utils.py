@@ -66,20 +66,5 @@ def preprocess_strategy(args):
             transforms.ToTensor(),
             normalize,
         ]) 
-    if args.rotate:
-        train_transforms = transforms.Compose([
-            transforms.Resize((args.resize_size, args.resize_size)),
-            transforms.RandomRotation(degrees=15),
-            transforms.RandomCrop((args.crop_size,args.crop_size)),
-            transforms.RandomHorizontalFlip(),
-            transforms.ToTensor(),
-            normalize,
-        ])  
-        val_transforms = transforms.Compose([
-            transforms.Resize(args.resize_size),
-            transforms.CenterCrop(args.crop_size),
-            transforms.ToTensor(),
-            normalize,
-        ]) 
    
     return train_transforms, val_transforms

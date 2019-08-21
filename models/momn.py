@@ -3,7 +3,12 @@ import math
 import torch
 import torch.nn.functional as F
 from torchvision import models
+
 import resnet
+import densenet
+import senet
+
+import re
 
 __all__ = ['momn']
 	
@@ -25,8 +30,12 @@ class Model(nn.Module):
         self.aux_var = args.aux_var
 	
         ''' Backbone Net'''
-        if self.arch in ['resnet50','resnet101']:
+        if self.arch in dir(resnet):
             self.backbone = getattr(resnet, self.arch)(pretrained=False)
+        elif self.arch in dir(densenet):
+            self.backbone = getattr(densenet, self.arch)(pretrained=False)
+        elif self.arch in dir(senet):
+            self.backbone = getattr(senet, self.arch)()
         elif self.arch in dir(models):
             self.backbone = getattr(models, self.arch)(pretrained=False)
         else:
@@ -36,8 +45,13 @@ class Model(nn.Module):
             for p in self.parameters():
                 p.requires_grad=False
                 
+        if 'densenet' in self.arch:
+            self.feat_dim = 1920
+        else:
+            self.feat_dim = 2048
+        
         ''' projction '''
-        self.proj = nn.Conv2d(2048, 256, kernel_size=1, stride=1, padding=0,bias=False)
+        self.proj = nn.Conv2d(self.feat_dim, 256, kernel_size=1, stride=1, padding=0,bias=False)
         self.layer_reduce_bn = nn.BatchNorm2d(256)
         self.layer_reduce_relu = nn.ReLU(inplace=True)
 
@@ -57,22 +71,45 @@ class Model(nn.Module):
                 
         if pretrained:
             if self.arch=='resnet50':
-                model_dict = self.backbone.state_dict()
-                self.backbone.load_state_dict(torch.load('./resnet50-19c8e357.pth'))
+                self.backbone.load_state_dict(torch.load('./pretrained/resnet50-19c8e357.pth'))
             elif self.arch=='resnet101':
+                self.backbone.load_state_dict(torch.load('./pretrained/resnet101-5d3b4d8f.pth'))
+            elif self.arch=='se_resnet152':
+                self.backbone.load_state_dict(torch.load('./pretrained/se_resnet152-d17c99b7.pth'))
+            elif self.arch=='senet':
+                self.backbone.load_state_dict(torch.load('./pretrained/senet154-c7b49a05.pth'))
+            elif self.arch=='resnext101_32x8d':
                 model_dict = self.backbone.state_dict()
-                self.backbone.load_state_dict(torch.load('./resnet101-5d3b4d8f.pth'))
+                pretrained_dict = torch.load('./pretrained/resnext101_32x8d-8ba56ff5.pth')
+                pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+                self.backbone.load_state_dict(pretrained_dict)
+            elif self.arch=='densenet201':
+                pattern = re.compile(
+                r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
+        
+                state_dict = torch.load('./pretrained/densenet201-c1103571.pth')
+                for key in list(state_dict.keys()):
+                    res = pattern.match(key)
+                    if res:
+                        new_key = res.group(1) + res.group(2)
+                        state_dict[new_key] = state_dict[key]
+                        del state_dict[key]
+                self.backbone.load_state_dict(state_dict)
 
-        if self.arch in ['resnet50','se_resnet50','resnet101']:
+        if 'resne' in self.arch:
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
-        elif self.arch in ['senet154']:
+        elif '152' in self.arch:
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-3])
-                
-                
+        elif 'senet' in self.arch:
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-3])
+        elif 'densenet' in self.arch:
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
+            self.backbone.add_module('final_relu',nn.ReLU(inplace=True))
+            
 
     def att_module(self, ic):
         model = nn.Sequential(
-            nn.AvgPool2d(28),
+            nn.AdaptiveAvgPool2d(1),
             nn.Conv2d(ic,int(ic/16), kernel_size=1, stride=1, bias=False),
             nn.Conv2d(int(ic/16),ic, kernel_size=1, stride=1, bias=False),
             nn.Sigmoid(),
@@ -152,7 +189,8 @@ class Model(nn.Module):
         ''' backbone '''
         x = self.backbone(x)
         last_conv = x
-		
+ 
+    
         # projection
         x = self.proj(last_conv)
         x = self.layer_reduce_bn(x)
