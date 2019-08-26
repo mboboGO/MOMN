@@ -312,7 +312,7 @@ def moln(pretrained=False,args=None):
     if pretrained:
         model_dict = model.state_dict()
         #pretrained_dict = model_zoo.load_url(model_urls['resnet101'])
-        pretrained_dict = torch.load('./resnet101-5d3b4d8f.pth')
+        pretrained_dict = torch.load('./pretrained/resnet101-5d3b4d8f.pth')
         pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
         model_dict.update(pretrained_dict)
         model.load_state_dict(model_dict)

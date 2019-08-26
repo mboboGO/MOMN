@@ -9,6 +9,7 @@ import densenet
 import senet
 
 import re
+from torch.utils.model_zoo import load_url as load_state_dict_from_url
 
 __all__ = ['momn']
 	
@@ -36,6 +37,8 @@ class Model(nn.Module):
             self.backbone = getattr(densenet, self.arch)(pretrained=False)
         elif self.arch in dir(senet):
             self.backbone = getattr(senet, self.arch)()
+        elif self.arch == 'inception_v3':
+            self.backbone = getattr(models, self.arch)(pretrained=False,aux_logits=False)
         elif self.arch in dir(models):
             self.backbone = getattr(models, self.arch)(pretrained=False)
         else:
@@ -76,7 +79,7 @@ class Model(nn.Module):
                 self.backbone.load_state_dict(torch.load('./pretrained/resnet101-5d3b4d8f.pth'))
             elif self.arch=='se_resnet152':
                 self.backbone.load_state_dict(torch.load('./pretrained/se_resnet152-d17c99b7.pth'))
-            elif self.arch=='senet':
+            elif self.arch=='senet154':
                 self.backbone.load_state_dict(torch.load('./pretrained/senet154-c7b49a05.pth'))
             elif self.arch=='resnext101_32x8d':
                 model_dict = self.backbone.state_dict()
@@ -86,7 +89,6 @@ class Model(nn.Module):
             elif self.arch=='densenet201':
                 pattern = re.compile(
                 r'^(.*denselayer\d+\.(?:norm|relu|conv))\.((?:[12])\.(?:weight|bias|running_mean|running_var))$')
-        
                 state_dict = torch.load('./pretrained/densenet201-c1103571.pth')
                 for key in list(state_dict.keys()):
                     res = pattern.match(key)
@@ -95,17 +97,23 @@ class Model(nn.Module):
                         state_dict[new_key] = state_dict[key]
                         del state_dict[key]
                 self.backbone.load_state_dict(state_dict)
+            elif self.arch=='inception_v3':
+                model_dict = self.backbone.state_dict()
+                pretrained_dict = torch.load('./pretrained/inception_v3_google-1a9a5a14.pth')
+                pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
+                self.backbone.load_state_dict(pretrained_dict)
 
         if 'resne' in self.arch:
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
         elif '152' in self.arch:
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-3])
-        elif 'senet' in self.arch:
+        elif 'senet154' in self.arch:
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-3])
         elif 'densenet' in self.arch:
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
             self.backbone.add_module('final_relu',nn.ReLU(inplace=True))
-            
+        elif 'inception_v3' in self.arch:
+            self.backbone = nn.Sequential(*list(self.backbone.children())[:-1])
 
     def att_module(self, ic):
         model = nn.Sequential(
@@ -188,8 +196,7 @@ class Model(nn.Module):
     def forward(self,x):
         ''' backbone '''
         x = self.backbone(x)
-        last_conv = x
- 
+        last_conv = x     
     
         # projection
         x = self.proj(last_conv)

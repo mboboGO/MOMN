@@ -18,6 +18,12 @@ def freeze_bn(model):
 def save_checkpoint(state, filename='checkpoint.pth.tar'):
     torch.save(state, filename)
 
+def softmax(x):
+    """Compute the softmax of vector x."""
+    exp_x = np.exp(x)
+    softmax_x = exp_x / np.sum(exp_x,axis=1,keepdims=True)
+    return softmax_x 
+    
 class AverageMeter(object):
     """Computes and stores the average and current value"""
     def __init__(self):
