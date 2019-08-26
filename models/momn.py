@@ -32,17 +32,17 @@ class Model(nn.Module):
 	
         ''' Backbone Net'''
         if self.arch in dir(resnet):
-            self.backbone = getattr(resnet, self.arch)(pretrained=False)
+            self.backbone = getattr(resnet, self.arch)(pretrained=pretrained)
         elif self.arch in dir(densenet):
-            self.backbone = getattr(densenet, self.arch)(pretrained=False)
+            self.backbone = getattr(densenet, self.arch)(pretrained=pretrained)
         elif self.arch in dir(senet):
             self.backbone = getattr(senet, self.arch)()
         elif self.arch == 'inception_v3':
-            self.backbone = getattr(models, self.arch)(pretrained=False,aux_logits=False)
+            self.backbone = getattr(models, self.arch)(pretrained=pretrained,aux_logits=False)
         elif self.arch in dir(models):
-            self.backbone = getattr(models, self.arch)(pretrained=False)
+            self.backbone = getattr(models, self.arch)(pretrained=pretrained)
         else:
-            self.backbone = pretrainedmodels.__dict__[self.arch](num_classes=1000,pretrained=False)
+            self.backbone = pretrainedmodels.__dict__[self.arch](num_classes=1000,pretrained=pretrained)
             
         if(is_fix):
             for p in self.parameters():
@@ -71,7 +71,8 @@ class Model(nn.Module):
             elif isinstance(m, nn.BatchNorm2d):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
-                
+        
+		'''
         if pretrained:
             if self.arch=='resnet50':
                 self.backbone.load_state_dict(torch.load('./pretrained/resnet50-19c8e357.pth'))
@@ -102,6 +103,7 @@ class Model(nn.Module):
                 pretrained_dict = torch.load('./pretrained/inception_v3_google-1a9a5a14.pth')
                 pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
                 self.backbone.load_state_dict(pretrained_dict)
+		'''
 
         if 'resne' in self.arch:
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
