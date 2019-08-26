@@ -1,6 +1,6 @@
 # MOMN
 This is the implementation of Multi-Objective Matrix Normalization for Fine-grained Visual Recognition by Pytorch.
-
+Paper is under review.
 
 # Requirements
 pytorch 1.0
@@ -21,3 +21,7 @@ step 2:
 
 # Testing
 An example script for testing is also given in the google drive.
+
+
+# pretrained models
+Several pretrained models are given in https://drive.google.com/drive/folders/1mgKoXwDg3oUGiJluCSWlZJkvrhsbq2tw?usp=sharing, of which the performance is listed in the paper.
