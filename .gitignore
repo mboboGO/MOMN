@@ -1,7 +1,2 @@
-cub
-car
-air
-dog
-eval.py
-run.sh
-pretrained
+.pth
+.model

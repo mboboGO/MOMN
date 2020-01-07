@@ -72,7 +72,7 @@ class Model(nn.Module):
                 nn.init.constant_(m.weight, 1)
                 nn.init.constant_(m.bias, 0)
         
-		'''
+		
         if pretrained:
             if self.arch=='resnet50':
                 self.backbone.load_state_dict(torch.load('./pretrained/resnet50-19c8e357.pth'))
@@ -103,7 +103,7 @@ class Model(nn.Module):
                 pretrained_dict = torch.load('./pretrained/inception_v3_google-1a9a5a14.pth')
                 pretrained_dict = {k: v for k, v in pretrained_dict.items() if k in model_dict}
                 self.backbone.load_state_dict(pretrained_dict)
-		'''
+		
 
         if 'resne' in self.arch:
             self.backbone = nn.Sequential(*list(self.backbone.children())[:-2])
