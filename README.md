@@ -1,6 +1,7 @@
 # MOMN
-This is the implementation of Multi-Objective Matrix Normalization for Fine-grained Visual Recognition by Pytorch.
-Paper is under review.
+This is an simple implementation of Multi-Objective Matrix Normalization for Fine-grained Visual Recognition by Pytorch.
+Paper is accepted by TIP.
+The code will be re-organized to make it more clear.
 
 # Requirements
 pytorch 1.0
